@@ -1,4 +1,5 @@
 import random
+from Crypto.Util import number
 
 
 '''
@@ -41,8 +42,8 @@ class RSA_model:
         the number coprime to the totient.
         '''
         # Large private prime numbers
-        self._p = 7907
-        self._q = 7919
+        self._p = number.getPrime(32)
+        self._q = number.getPrime(32)
         
         # RSA modulus
         self.m = self._p * self._q
