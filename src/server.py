@@ -11,6 +11,7 @@ server.bind(('', 0))
 server.listen(100)
 
 clients = []
+client_details = []
 
 def signal_handler(signal, frame):
     ''' Capturing an admin's signal to exit
@@ -22,17 +23,44 @@ def signal_handler(signal, frame):
 # Setting up signal handler
 signal.signal(signal.SIGINT, signal_handler)
 
-def manage_client(conn):
-    ''' A function we call to manage a client's connection in thread.
+def new_client(conn):
+    ''' Receive new message details from client.
+    Send client existing client details.
     '''
     print("A client has connected")
     try:
-        print("Receiving client's name")
+        print("Receiving client's info")
+        # Receive and unpack first message
         message = conn.recv(2048)
-        print(pickle.loads(message))
+        sender, _, (m, e) = pickle.loads(message)
+        client = (sender, m, e)
+
+        # Sending new client existing client details
+        # Adding client to records
+        clients.append(conn)
+        conn.send(pickle.dumps(("server", sender, client_details)))
+        client_details.append(client)
+
+        # Sending all clients new client info
+        broadcast(pickle.dumps((sender, m, e)), conn)
+        print("Client " + sender + " added to network!")
+        return sender
     except:
         # Connection broken on initial message
+        # Remove client and kill thread
+
+        return False
+
+
+def manage_client(conn):
+    ''' A function we call to manage a client's connection in thread.
+    '''
+
+    client = new_client(conn)
+    if not client:
+        print("Failed to prepare client for network communication")
         return
+
     while True:
         try:
             message = conn.recv(2048)
@@ -67,7 +95,10 @@ def remove_client(c):
     ''' Removes the provided client from the list of client connections.
     '''
     if c in clients:
-        clients.remove(c)
+        idx = clients.index(c)
+        clients.pop(idx)
+        name, _, _ = client_details.pop(idx)
+        print("Removed client " + name + " from the network")
 
 def close_network():
     ''' Closes the demo server
@@ -88,7 +119,6 @@ if __name__ == "__main__":
         # Accepts connections and stores their information
         # We only store the user's connection since the demo is run on the same machine
         conn = server.accept()[0] 
-        clients.append(conn)
 
         # Start a new thread to handle the client's connection
         start_new_thread(manage_client,(conn,))

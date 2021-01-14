@@ -24,20 +24,29 @@ signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == "__main__":
 
-    # Providing server username
-    name = input("What is your name?")
+    # Providing server name
+    name = input("Please enter your name: ")
+    while name == "server":
+        name = input("Your name cannot be 'server' please enter another name: ")
 
     # Initializing private public key
     user_rsa = RSA_model()
     print("Your public key is: ", user_rsa.m,  user_rsa.e)
     print("Your private key is: ", user_rsa._p, user_rsa._q, user_rsa._d)
 
-    data_name = pickle.dumps(name)
-    server.send(data_name)
-    print("User name and public key sent username to server!")
+    # Messages come in the form sender, reciever, message
+    message = (name, "server", (user_rsa.m, user_rsa.e))
+
+
+    data_msg = pickle.dumps(message)
+    server.send(data_msg)
+    print("User name and public key sent to server!")
+
+    contacts = []
 
     while True:
         
+        # Set list of byte streams to check with select
         sockets = [sys.stdin, server]
 
         # Selecting I/O ready to be read
@@ -45,14 +54,28 @@ if __name__ == "__main__":
         ready, _, _  = select.select(sockets, [], [])
 
         for s in ready:
+            # Server socket is ready
             if s == server:
                 message = s.recv(2048)
-                if (message):
-                    print(message)
+                # Socket is not closed and message was received
+                if message:
+                    sender, receiver, msg = pickle.loads(message)
+                    # Message from server is a list of users and public keys
+                    if sender == "server":
+                        contacts.extend(message)
+                    # Message was destined for client
+                    elif receiver == name:
+                        message = user_rsa.decrypt(msg)
+                        print(sender + ": " + message)
+                # Socket is closed
                 else:
                     print("Server was closed")
                     exit()
+
+            # Client is sending a message
             else:
                 message = sys.stdin.readline()
-                cipher = user_rsa.encrypt(message)
-                server.send(cipher)
+                message_split = message.split(" ", 1)
+                cipher = user_rsa.encrypt(message_split[1])
+                msg = pickle.dumps((name, message_split[0], cipher))
+                server.send(msg)
