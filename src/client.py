@@ -19,6 +19,35 @@ def signal_handler(signal, frame):
     server.close()
     exit()
 
+def handle_msg(name, message, contacts):
+    
+    # Socket is not closed and message was received
+    if message:
+        sender, receiver, msg = pickle.loads(message)
+        # Message is from server directly
+        if sender == "server":
+            # Message is to add to contact list
+            if receiver == "add":
+                print("Adding to conacts list", msg)
+                contacts.extend(msg)
+            # Message is to remove from contact list
+            elif receiver == "remove":
+                for i in range(len(contacts)):
+                    name, _, _ = contacts[i]
+                    # Contact exists
+                    if name == msg:
+                        print("Removing ", contacts.pop(i), " from contacts")
+                        break
+
+        # Message was destined for client
+        elif receiver == name:
+            message = user_rsa.decrypt(msg)
+            print(sender + ": " + message.strip('\n'))
+    # Socket is closed
+    else:
+        print("Server was closed")
+        exit()
+
 # Setting up signal handler
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -31,17 +60,18 @@ if __name__ == "__main__":
 
     # Initializing private public key
     user_rsa = RSA_model()
-    print("Your public key is: ", user_rsa.m,  user_rsa.e)
+    print("Your public key is: ", user_rsa.n,  user_rsa.e)
     print("Your private key is: ", user_rsa._p, user_rsa._q, user_rsa._d)
 
     # Messages come in the form sender, reciever, message
-    message = (name, "server", (user_rsa.m, user_rsa.e))
+    message = (name, "server", (user_rsa.n, user_rsa.e))
 
 
     data_msg = pickle.dumps(message)
     server.send(data_msg)
     print("User name and public key sent to server!")
 
+    # List of tuples containing target name and RSA private key
     contacts = []
 
     while True:
@@ -56,26 +86,21 @@ if __name__ == "__main__":
         for s in ready:
             # Server socket is ready
             if s == server:
-                message = s.recv(2048)
-                # Socket is not closed and message was received
-                if message:
-                    sender, receiver, msg = pickle.loads(message)
-                    # Message from server is a list of users and public keys
-                    if sender == "server":
-                        contacts.extend(message)
-                    # Message was destined for client
-                    elif receiver == name:
-                        message = user_rsa.decrypt(msg)
-                        print(sender + ": " + message)
-                # Socket is closed
-                else:
-                    print("Server was closed")
-                    exit()
+                handle_msg(name, s.recv(2048), contacts)
 
             # Client is sending a message
             else:
+                # Determine intended receiver and encrypt message
                 message = sys.stdin.readline()
                 message_split = message.split(" ", 1)
-                cipher = user_rsa.encrypt(message_split[1])
-                msg = pickle.dumps((name, message_split[0], cipher))
+                receiver = message_split[0]
+                e = -1
+                for c in contacts:
+                    if c[0] == receiver:
+                        _, n, e = c
+                if e < 1:
+                    print("User does not exist in contacts, please try again.")
+                    continue
+                cipher = user_rsa.encrypt(message_split[1], e, n)
+                msg = pickle.dumps((name, receiver, cipher))
                 server.send(msg)

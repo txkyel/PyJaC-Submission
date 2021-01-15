@@ -46,7 +46,7 @@ class RSA_model:
         self._q = number.getPrime(32)
         
         # RSA modulus
-        self.m = self._p * self._q
+        self.n = self._p * self._q
 
         # Totient of the RSA modulus
         phi = (self._p - 1) * (self._q - 1)
@@ -63,28 +63,28 @@ class RSA_model:
         if self._d < 0:
             self._d += phi
 
-    def encrypt(self, message):
+    def encrypt(self, message, e, m):
         '''
         Encrypting each character utilizing the RSA public key.
         '''
-        cipher = [pow(ord(c), self.e, self.m) for c in message]
+        cipher = [pow(ord(c), e, m) for c in message]
         return cipher
 
     def decrypt(self, cipher):
         '''
         Decrypting each character utilizing the RSA public key.
         '''
-        message = [chr(pow(c, self._d, self.m)) for c in cipher]
+        message = [chr(pow(c, self._d, self.n)) for c in cipher]
         return ''.join(message)
 
 if __name__ == "__main__":
     print("Generating Alice's public and private RSA keys")
     alice = RSA_model()
     print("Alice's private keys are: ", alice._p, alice._q, alice._d)
-    print("Alice's public keys are: ", alice.m, alice.e)
+    print("Alice's public keys are: ", alice.n, alice.e)
     print("Alice share's her public keys over the network with Bob.")
     bob_message = input("Bob wants to send Alice a message. What message does Bob send?: ")
-    cipher = alice.encrypt(bob_message)
+    cipher = alice.encrypt(bob_message, alice.n, alice.e)
     print("Bob encrypts his message using the public key Alice provided\n", cipher, "\nand sends it to Alice over the network.")
     decrypted = alice.decrypt(cipher)
     print("Alice receives the message from Bob, decrypts it, and reads the following:\n")

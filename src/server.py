@@ -32,17 +32,17 @@ def new_client(conn):
         print("Receiving client's info")
         # Receive and unpack first message
         message = conn.recv(2048)
-        sender, _, (m, e) = pickle.loads(message)
-        client = (sender, m, e)
+        sender, _, (n, e) = pickle.loads(message)
+        client = (sender, n, e)
 
         # Sending new client existing client details
         # Adding client to records
         clients.append(conn)
-        conn.send(pickle.dumps(("server", sender, client_details)))
+        conn.send(pickle.dumps(("server", "add", client_details)))
         client_details.append(client)
 
         # Sending all clients new client info
-        broadcast(pickle.dumps((sender, m, e)), conn)
+        broadcast(pickle.dumps(("server", "add", [client])), conn)
         print("Client " + sender + " added to network!")
         return sender
     except:
@@ -65,8 +65,9 @@ def manage_client(conn):
         try:
             message = conn.recv(2048)
             if message:
+                msg = pickle.loads(message)
                 # Log message server and destination
-                print("Sender", id, "\nMessage: ", message)
+                print("RECEIVED MESSAGE: ", msg)
                 # Broadcast message to all clients on the network
                 broadcast(message, conn)
             else:
@@ -99,6 +100,8 @@ def remove_client(c):
         clients.pop(idx)
         name, _, _ = client_details.pop(idx)
         print("Removed client " + name + " from the network")
+        message = ("server", "remove", name)
+        broadcast(pickle.dumps(message), None)
 
 def close_network():
     ''' Closes the demo server
