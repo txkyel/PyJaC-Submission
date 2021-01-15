@@ -3,18 +3,18 @@ import signal
 import pickle
 from _thread import start_new_thread
 
+# Preparing socket for client connections
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
 server.bind(('', 0))
-
 server.listen(100)
 
-clients = []
-client_details = []
+# Client metadata
+clients = [] # Connections
+client_details = [] # Names and public keys
 
 def signal_handler(signal, frame):
-    ''' Capturing an admin's signal to exit
+    ''' Capturing SIGINT to close server
     '''
     print ("Closing server")
     close_network()
@@ -53,7 +53,7 @@ def new_client(conn):
 
 
 def manage_client(conn):
-    ''' A function we call to manage a client's connection in thread.
+    ''' A function we call to manage a new client's connection in thread.
     '''
 
     client = new_client(conn)
@@ -113,11 +113,9 @@ def close_network():
 
 if __name__ == "__main__":
 
-
     print("Server bound to port ", server.getsockname()[1])
 
     # Using global closed variable to handle loop
-
     while True:
         # Accepts connections and stores their information
         # We only store the user's connection since the demo is run on the same machine
