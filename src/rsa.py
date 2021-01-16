@@ -67,16 +67,16 @@ class RSA_model:
         if self._d < 0:
             self._d += phi
 
-    def encrypt(self, message, e, m):
+    def encrypt(self, message, e, n):
         '''
         Encrypting each character utilizing the RSA public key.
         This is vulnerable to frequency analysis
         '''
-        # cipher = [pow(ord(c), e, m) for c in message]
+        # cipher = [pow(ord(c), e, n) for c in message]
         cipher = []
         for c in message:
             # Encrypt character
-            c0 = pow(ord(c), e, m)
+            c0 = pow(ord(c), e, n)
             print("Encrypting char:", c, "to", c0)
             cipher.append(c0)
         return cipher
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     print("Alice's public keys are: ", alice.n, alice.e)
     print("Alice share's her public keys over the network with Bob.")
     bob_message = input("Bob wants to send Alice a message. What message does Bob send?: ")
-    cipher = alice.encrypt(bob_message, alice.n, alice.e)
+    cipher = alice.encrypt(bob_message, alice.e, alice.n)
     print("Bob encrypts his message using the public key Alice provided\n", cipher, "\nand sends it to Alice over the network.")
     decrypted = alice.decrypt(cipher)
     print("Alice receives the message from Bob, decrypts it, and reads the following:\n")
