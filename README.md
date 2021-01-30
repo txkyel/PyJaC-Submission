@@ -1,8 +1,8 @@
 # PyJaC-Submission
 
 ## Dependencies
-* ``Python 3.0`` or greater which you can download and install [here](https://www.python.org/downloads/)
-* ``PyCryptoDome`` you read up on and learn how to to install [here](https://pycryptodome.readthedocs.io/en/latest/src/introduction.html)
+* ``Python 3.0`` or greater, you can download and install [here](https://www.python.org/downloads/)
+* ``PyCryptoDome``, you read up on and learn how to to install [here](https://pycryptodome.readthedocs.io/en/latest/src/introduction.html)
 
 ## Description
 A simple chat service used to model and demonstrate a network that utilizes 32 bit RSA encryption to encrypt client messages broadcasted over the network.
