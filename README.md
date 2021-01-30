@@ -1,4 +1,4 @@
-# PyJaC-Submission
+# PyJaC-Submission - RSA Interactable Model
 
 ## Dependencies
 * ``Python 3.0`` or greater, you can download and install [here](https://www.python.org/downloads/)
